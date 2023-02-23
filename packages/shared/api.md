@@ -96,10 +96,20 @@ export type EventHandler = ((arg1: any, arg2: any, arg3: any, arg4: any) => void
 // @public
 export function flatMap<U, T extends any[]>(array: T[], callbackfn: (value: T, index: number, array: T[]) => U[]): U[];
 
+// Warning: (ae-missing-release-tag) "formatDate" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export function formatDate(year: number, month: number, day: number): string;
+
 // Warning: (ae-missing-release-tag) "formatId" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public
 export function formatId(id: number | string): string;
+
+// Warning: (ae-missing-release-tag) "formatTime" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export function formatTime(hour: number, minute: number): string;
 
 // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
 // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
@@ -122,6 +132,13 @@ export type IsAny<T> = 0 extends 1 & T ? true : false;
 //
 // @public
 export function isDocker(): boolean;
+
+// Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+// Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+// Warning: (ae-missing-release-tag) "isEnumMember" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public
+export function isEnumMember(enumeration: unknown, value: number): boolean;
 
 // Warning: (ae-missing-release-tag) "isPrintableASCII" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //

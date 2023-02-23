@@ -13,6 +13,8 @@ on:
       # pre-releases
       - "v[0-9]+.[0-9]+.[0-9]+-**"
   pull_request: {}
+  merge_group:
+    types: [checks_requested]
 
 # Cancel previous PR/branch runs when a new commit is pushed
 concurrency: 
@@ -20,7 +22,12 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  TURBO_FLAGS: "--concurrency=2 --api=http://127.0.0.1:9080 --token=foo --team=me" # The token must match the one in the prepare-env action
+  TURBO_API: "http://127.0.0.1:9080"
+  # The token and team are required by the TurboRepo server, just set them to anything
+  TURBO_TOKEN: foo
+  TURBO_TEAM: me
+  # Additional CLI flags for turbo commands
+  TURBO_FLAGS: "" # "--concurrency=2"
 
 jobs:
   build:
@@ -149,10 +156,10 @@ jobs:
         if ! git diff --quiet ; then
           echo "has changes"
           git diff > fix.patch
-          echo "::set-output name=changed::true"
+          echo "changed=true" >> $GITHUB_OUTPUT
         else
           echo "unchanged"
-          echo "::set-output name=changed::false"
+          echo "changed=false" >> $GITHUB_OUTPUT
         fi
 
     - name: Upload Patch
@@ -421,14 +428,14 @@ jobs:
       run: |
         VERSION="${{ github.ref }}"
         VERSION=${VERSION##*/v}
-        echo "::set-output name=VERSION::$VERSION"
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        EOF=$(od -An -N6 -x /dev/urandom | tr -d ' ')
         BODY=$(git show -s --format=%b)
-        BODY="${BODY//'%'/'%25'}"
-        BODY="${BODY//$'\n'/'%0A'}"
-        BODY="${BODY//$'\r'/'%0D'}"
-        echo "::set-output name=BODY::$BODY"
+        echo "BODY<<$EOF" >> $GITHUB_OUTPUT
+        echo "$BODY" >> $GITHUB_OUTPUT
+        echo "$EOF" >> $GITHUB_OUTPUT
         if [[ $VERSION == *"-"* ]] ; then
-          echo "::set-output name=TAG::--tag next"
+          echo "TAG=--tag next" >> $GITHUB_OUTPUT
         fi
 
     - name: Publish packages to npm

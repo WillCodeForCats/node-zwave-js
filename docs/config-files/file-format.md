@@ -74,7 +74,7 @@ Can be used to add instructions for the user to a device:
 
 ## `endpoints`
 
-Optional endpoint-specific configuration. For now this only includes associations. Example:
+Optional endpoint-specific configuration. This includes associations and endpoint labels. Example:
 
 ```json
 "endpoints": {
@@ -84,6 +84,7 @@ Optional endpoint-specific configuration. For now this only includes association
 		}
 	},
 	"1": {
+		"label": "Relay",
 		"associations": {
 			// Association definitions for endpoint 1, see below for details
 		}
@@ -399,6 +400,10 @@ Many devices unnecessarily use endpoints when they could (or do) provide all fun
 ### `preserveRootApplicationCCValueIDs`
 
 The Z-Wave+ specs mandate that the root endpoint must **mirror** the application functionality of endpoint 1 (and potentially others). For this reason, `zwave-js` hides these superfluous values. However, some legacy devices offer additional functionality through the root endpoint, which should not be hidden. To achieve this, set `preserveRootApplicationCCValueIDs` to `true`.
+
+### `reportTimeout`
+
+By default, the driver determines the time to wait for a response from a node using the RTT of the request (including nonce exchange if needed) and adds `1s` to it. While `1s` is recommended by the specs and a good default, some devices have been found to sometimes respond slower. Instead of increasing the timeout for all devices with the driver option, the `reportTimeout` compat flag can be used to increase the timeout for a specific device.
 
 ### `skipConfigurationNameQuery`
 

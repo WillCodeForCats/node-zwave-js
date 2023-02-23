@@ -410,7 +410,7 @@ The `healNode` method performs this step for a given node. The returned promise 
 ### `beginHealingNetwork`
 
 ```ts
-beginHealingNetwork(): boolean
+beginHealingNetwork(options?: HealNetworkOptions): boolean
 ```
 
 Synchronously (!) starts the healing process for all nodes in the network. Returns `true` if the process was started, otherwise `false`. This also returns `false` if a healing process is already active. The using library is notified about the progress with the following events:
@@ -424,6 +424,17 @@ In both cases, the listener is called with a `ReadonlyMap<number, HealNodeStatus
 -   `"done"`: The healing process for this node is done
 -   `"failed"`: There was an error while healing this node
 -   `"skipped"`: The node was skipped because it is dead
+
+The `options` argument can be used to skip healing sleeping nodes:
+
+<!-- #import HealNetworkOptions from "zwave-js" -->
+
+```ts
+interface HealNetworkOptions {
+	/** Whether sleeping nodes should be healed too at the end of the healing process. Default: true */
+	includeSleeping?: boolean;
+}
+```
 
 ### `stopHealingNetwork`
 
@@ -481,6 +492,77 @@ type ReplaceNodeOptions =
 				| InclusionStrategy.Security_S0;
 	  };
 ```
+
+### Managing routes
+
+The methods shown here can be used to manage routes between nodes. For the most part, these are not particularly relevant for applications or even end users, since they are used automatically by Z-Wave JS when necessary.
+
+```ts
+assignReturnRoute(nodeId: number, destinationNodeId: number): Promise<boolean>;
+deleteReturnRoute(nodeId: number): Promise<boolean>;
+
+assignSUCReturnRoute(nodeId: number): Promise<boolean>;
+deleteSUCReturnRoute(nodeId: number): Promise<boolean>;
+```
+
+-   `assignReturnRoute` instructs the controller to assign node `nodeId` a set of routes to node `destinationNodeId`. These routes are determined by the controller.
+-   `deleteReturnRoute` instructs node `nodeId` to delete all previously assigned routes.
+-   `assignSUCReturnRoute` works like `assignReturnRoute`, but the routes have the SUC as the destination.
+-   `deleteSUCReturnRoute` works like `deleteReturnRoute`, but for routes that have the SUC as the destination.
+
+In certain scenarios, the routing algorithm of Z-Wave can break down and produce subpar results. It is possible to manually assign priority routes which will always be attempted first instead of the automatically determined routes. This is done with the following methods:
+
+```ts
+setPriorityRoute(
+	destinationNodeId: number,
+	repeaters: number[],
+	routeSpeed: ZWaveDataRate,
+): Promise<boolean>
+
+getPriorityRoute(destinationNodeId: number): Promise<
+	| {
+			repeaters: number[];
+			routeSpeed: ZWaveDataRate;
+	  }
+	| undefined
+>;
+
+assignPriorityReturnRoute(
+	nodeId: number,
+	destinationNodeId: number,
+	repeaters: number[],
+	routeSpeed: ZWaveDataRate,
+): Promise<boolean>;
+
+assignPrioritySUCReturnRoute(
+	nodeId: number,
+	repeaters: number[],
+	routeSpeed: ZWaveDataRate,
+): Promise<boolean>
+```
+
+-   `setPriorityRoute` sets the priority route which will always be used for the first transmission attempt from the controller to the given node.
+-   `getPriorityRoute` returns the priority route to the given node. **Note:** if none is set, this will return the LWR or NLWR instead.
+-   `assignPriorityReturnRoute` sets the priority route from node `nodeId` to the destination node.
+-   `assignPrioritySUCReturnRoute` does the same, but with the SUC as the destination node.
+
+The `repeaters` array contains the node IDs of the repeaters (max. 4) that should be used for the route. An empty array means a direct connection.
+
+`routeSpeed` is the transmission speed to be used for the route. Make sure that all nodes in the route support this speed.
+
+<!-- #import ZWaveDataRate from "@zwave-js/core" -->
+
+```ts
+enum ZWaveDataRate {
+	"9k6" = 0x01,
+	"40k" = 0x02,
+	"100k" = 0x03,
+}
+```
+
+> [!WARNING] While these methods are meant to improve the routing and latency in certain situations, they can easily make things worse by choosing the wrong or unreachable repeaters, or by selecting a route speed that is not supported by a node in the route.
+>
+> Typically you'll want to use these methods to force a direct connection as the first attempt.
 
 ### Managing associations
 
@@ -615,7 +697,12 @@ setPowerlevel(powerlevel: number, measured0dBm: number): Promise<boolean>;
 getPowerlevel(): Promise<{powerlevel: number, measured0dBm: number}>;
 ```
 
-Configure or read the TX powerlevel setting of the Z-Wave API. `powerlevel` is the normal powerlevel, `measured0dBm` the measured output power at 0 dBm. Both are in dBm and must be between -12.8 and +12.7.
+Configure or read the TX powerlevel setting of the Z-Wave API. `powerlevel` is the normal powerlevel, `measured0dBm` the measured output power at 0 dBm and serves as a calibration. Both are in dBm and must satisfy the following constraints:
+
+-   `powerlevel` between `-10` and either `+12.7`, `+14` or `+20` dBm (depending on the controller)
+-   `measured0dBm` between `-10` and `+10` or between `-12.8` and `+12.7` dBm (depending on the controller)
+
+Unfortunately there doesn't seem to be a way to determine which constrains apply for a given controller.
 
 > [!ATTENTION] Not all controllers support configuring the TX powerlevel. These methods will throw if they are not supported.
 
@@ -876,6 +963,14 @@ To do so, the controller gets put in bootloader mode where a new firmware image 
 > [!WARNING] A failure during this process may leave your controller in recovery mode, rendering it unusable until a correct firmware image is uploaded.
 
 To keep track of the update progress, use the [`"firmware update progress"` and `"firmware update finished"` events](api/controller#quotfirmware-update-progressquot) of the controller.
+
+### `isFirmwareUpdateInProgress`
+
+```ts
+isFirmwareUpdateInProgress(): boolean;
+```
+
+Return whether a firmware update is in progress for the controller.
 
 ## Controller properties
 

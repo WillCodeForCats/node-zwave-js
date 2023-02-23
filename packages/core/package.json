@@ -1,6 +1,6 @@
 {
   "name": "@zwave-js/core",
-  "version": "10.5.0",
+  "version": "10.10.0",
   "description": "zwave-js: core components",
   "keywords": [],
   "publishConfig": {
@@ -68,12 +68,12 @@
     "build": "tsc -b tsconfig.build.json",
     "clean": "del-cli build/ \"*.tsbuildinfo\"",
     "extract-api": "yarn api-extractor run",
-    "//watch": "yarn run build --watch --pretty",
     "lint:ts": "eslint --ext .ts --rule \"prettier/prettier: off\" \"src/**/*.ts\"",
     "lint:ts:fix": "yarn run lint:ts --fix",
     "lint:prettier": "prettier -c \"src/**/*.ts\"",
     "lint:prettier:fix": "yarn run lint:prettier -w",
-    "test:ts": "ava"
+    "test:ts": "ava",
+    "test:dirty": "node -r ../../maintenance/esbuild-register.js ../maintenance/src/resolveDirtyTests.ts --run"
   },
   "dependencies": {
     "@alcalzone/jsonl-db": "^2.5.3",

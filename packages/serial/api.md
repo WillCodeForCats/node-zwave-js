@@ -4,10 +4,8 @@
 
 ```ts
 
-/// <reference types="jest" />
 /// <reference types="node" />
 
-import type { BindingPortInterface } from '@serialport/bindings-interface';
 import type { DataDirection } from '@zwave-js/core/safe';
 import { DataDirection as DataDirection_2 } from '@zwave-js/core';
 import { Duplex } from 'stream';
@@ -18,17 +16,11 @@ import type { LogContext } from '@zwave-js/core/safe';
 import { MessageOrCCLogEntry } from '@zwave-js/core';
 import { MessagePriority } from '@zwave-js/core';
 import * as net from 'net';
-import type { OpenOptions } from '@serialport/bindings-interface';
 import { PassThrough } from 'stream';
-import type { PortInfo } from '@serialport/bindings-interface';
-import type { PortStatus } from '@serialport/bindings-interface';
 import { SerialPort } from 'serialport';
-import type { SetOptions } from '@serialport/bindings-interface';
 import { Transform } from 'stream';
 import { TransformCallback } from 'stream';
 import type { TypedClassDecorator } from '@zwave-js/shared/safe';
-import { TypedEventEmitter } from '@zwave-js/shared';
-import type { UpdateOptions } from '@serialport/bindings-interface';
 import type { ZWaveApplicationHost } from '@zwave-js/host';
 import type { ZWaveHost } from '@zwave-js/host';
 import { ZWaveLogContainer } from '@zwave-js/core';
@@ -95,14 +87,6 @@ export class BootloaderScreenParser extends Transform {
     _transform(chunk: any, encoding: string, callback: TransformCallback): void;
 }
 
-// Warning: (ae-missing-release-tag) "createAndOpenMockedZWaveSerialPort" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export function createAndOpenMockedZWaveSerialPort(path: string): Promise<{
-    port: ZWaveSerialPort;
-    binding: MockPortBinding;
-}>;
-
 // Warning: (ae-missing-release-tag) "DeserializingMessageConstructor" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
@@ -128,6 +112,10 @@ export enum FunctionType {
     ApplicationCommand = 4,
     // (undocumented)
     ApplicationUpdateRequest = 73,
+    // (undocumented)
+    AssignPriorityReturnRoute = 79,
+    // (undocumented)
+    AssignPrioritySUCReturnRoute = 88,
     // (undocumented)
     AssignReturnRoute = 70,
     // (undocumented)
@@ -209,6 +197,8 @@ export enum FunctionType {
     // (undocumented)
     GetNVMId = 41,
     // (undocumented)
+    GetPriorityRoute = 146,
+    // (undocumented)
     GetProtocolVersion = 9,
     // (undocumented)
     GetRoutingInfo = 128,
@@ -251,6 +241,8 @@ export enum FunctionType {
     // (undocumented)
     SetApplicationNodeInformation = 3,
     // (undocumented)
+    SetPriorityRoute = 147,
+    // (undocumented)
     SetRFReceiveMode = 16,
     // (undocumented)
     SetSerialApiTimeouts = 6,
@@ -258,8 +250,6 @@ export enum FunctionType {
     SetSUCNodeId = 84,
     // (undocumented)
     SoftReset = 8,
-    // (undocumented)
-    UNKNOWN_FUNC_AssignPrioritySUCReturnRoute = 88,
     // (undocumented)
     UNKNOWN_FUNC_ClearNetworkStats = 57,
     // (undocumented)
@@ -270,8 +260,6 @@ export enum FunctionType {
     UNKNOWN_FUNC_CLOCK_SET = 48,
     // (undocumented)
     UNKNOWN_FUNC_GET_LIBRARY_TYPE = 189,
-    // (undocumented)
-    UNKNOWN_FUNC_GET_PRIORITY_ROUTE = 146,
     // (undocumented)
     UNKNOWN_FUNC_GET_PROTOCOL_STATUS = 191,
     // (undocumented)
@@ -314,8 +302,6 @@ export enum FunctionType {
     UNKNOWN_FUNC_SEND_TEST_FRAME = 190,
     // (undocumented)
     UNKNOWN_FUNC_SERIAL_API_TEST = 149,
-    // (undocumented)
-    UNKNOWN_FUNC_SET_PRIORITY_ROUTE = 147,
     // (undocumented)
     UNKNOWN_FUNC_SET_SLEEP_MODE = 17,
     // (undocumented)
@@ -537,6 +523,7 @@ export interface MessageDeserializationOptions {
     // (undocumented)
     origin?: MessageOrigin;
     parseCCs?: boolean;
+    sdkVersion?: string;
 }
 
 // Warning: (ae-missing-release-tag) "MessageHeaders" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -582,57 +569,6 @@ export enum MessageType {
 //
 // @public
 export const messageTypes: <TTarget extends Message>(messageType: MessageType, functionType: FunctionType) => TypedClassDecorator<TTarget>;
-
-// Warning: (ae-missing-release-tag) "MockSerialPort" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-// Warning: (ae-missing-release-tag) "MockSerialPort" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public (undocumented)
-export interface MockSerialPort {
-    // (undocumented)
-    addListener<TEvent extends MockSerialPortEvents>(event: TEvent, callback: MockSerialPortEventCallbacks[TEvent]): this;
-    // (undocumented)
-    emit<TEvent extends MockSerialPortEvents>(event: TEvent, ...args: Parameters<MockSerialPortEventCallbacks[TEvent]>): boolean;
-    // (undocumented)
-    off<TEvent extends MockSerialPortEvents>(event: TEvent, callback: MockSerialPortEventCallbacks[TEvent]): this;
-    // Warning: (ae-forgotten-export) The symbol "MockSerialPortEvents" needs to be exported by the entry point index.d.ts
-    // Warning: (ae-forgotten-export) The symbol "MockSerialPortEventCallbacks" needs to be exported by the entry point index.d.ts
-    //
-    // (undocumented)
-    on<TEvent extends MockSerialPortEvents>(event: TEvent, callback: MockSerialPortEventCallbacks[TEvent]): this;
-    // (undocumented)
-    once<TEvent extends MockSerialPortEvents>(event: TEvent, callback: MockSerialPortEventCallbacks[TEvent]): this;
-    // (undocumented)
-    removeAllListeners(event?: MockSerialPortEvents): this;
-    // (undocumented)
-    removeListener<TEvent extends MockSerialPortEvents>(event: TEvent, callback: MockSerialPortEventCallbacks[TEvent]): this;
-}
-
-// @public (undocumented)
-export class MockSerialPort extends ZWaveSerialPort {
-    constructor(port: string, loggers: ZWaveLogContainer);
-    // (undocumented)
-    close(): Promise<void>;
-    // (undocumented)
-    readonly closeStub: jest.Mock;
-    // (undocumented)
-    static getInstance(port: string): MockSerialPort | undefined;
-    // (undocumented)
-    get isOpen(): boolean;
-    // (undocumented)
-    get lastWrite(): string | number[] | Buffer | undefined;
-    // (undocumented)
-    open(): Promise<void>;
-    // (undocumented)
-    readonly openStub: jest.Mock;
-    // (undocumented)
-    raiseError(err: Error): void;
-    // (undocumented)
-    receiveData(data: Buffer): void;
-    // (undocumented)
-    writeAsync(data: Buffer): Promise<void>;
-    // (undocumented)
-    readonly writeStub: jest.Mock;
-}
 
 // Warning: (ae-missing-release-tag) "MultiStageCallback" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -834,10 +770,6 @@ export class ZWaveSocket extends ZWaveSerialPortBase {
 //
 // @public (undocumented)
 export type ZWaveSocketOptions = Omit<net.TcpSocketConnectOpts, "onread"> | Omit<net.IpcSocketConnectOpts, "onread">;
-
-// Warnings were encountered during analysis:
-//
-// src/MockSerialPort.ts:109:2 - (ae-forgotten-export) The symbol "MockPortBinding" needs to be exported by the entry point index.d.ts
 
 // (No @packageDocumentation comment for this package)
 

@@ -46,7 +46,9 @@ import {
 	securityClassIsS2,
 	securityClassOrder,
 	SinglecastCC,
+	TransmitStatus,
 	ValueDB,
+	ZWaveDataRate,
 	ZWaveError,
 	ZWaveErrorCodes,
 } from "@zwave-js/core";
@@ -66,7 +68,6 @@ import {
 	getErrorMessage,
 	Mixin,
 	num2hex,
-	padVersion,
 	pick,
 	ReadonlyObjectKeyMap,
 	ReadonlyThrowingMap,
@@ -82,7 +83,6 @@ import {
 import { roundTo } from "alcalzone-shared/math";
 import { isObject } from "alcalzone-shared/typeguards";
 import crypto from "crypto";
-import semver from "semver";
 import util from "util";
 import type { Driver } from "../driver/Driver";
 import { cacheKeys, cacheKeyUtils } from "../driver/NetworkCache";
@@ -126,6 +126,8 @@ import {
 	SerialAPISetup_GetLRMaximumPayloadSizeResponse,
 	SerialAPISetup_GetMaximumPayloadSizeRequest,
 	SerialAPISetup_GetMaximumPayloadSizeResponse,
+	SerialAPISetup_GetPowerlevel16BitRequest,
+	SerialAPISetup_GetPowerlevel16BitResponse,
 	SerialAPISetup_GetPowerlevelRequest,
 	SerialAPISetup_GetPowerlevelResponse,
 	SerialAPISetup_GetRFRegionRequest,
@@ -134,6 +136,8 @@ import {
 	SerialAPISetup_GetSupportedCommandsResponse,
 	SerialAPISetup_SetNodeIDTypeRequest,
 	SerialAPISetup_SetNodeIDTypeResponse,
+	SerialAPISetup_SetPowerlevel16BitRequest,
+	SerialAPISetup_SetPowerlevel16BitResponse,
 	SerialAPISetup_SetPowerlevelRequest,
 	SerialAPISetup_SetPowerlevelResponse,
 	SerialAPISetup_SetRFRegionRequest,
@@ -167,10 +171,31 @@ import {
 	computeNeighborDiscoveryTimeout,
 	EnableSmartStartListenRequest,
 } from "../serialapi/network-mgmt/AddNodeToNetworkRequest";
-import { AssignReturnRouteRequest } from "../serialapi/network-mgmt/AssignReturnRouteMessages";
-import { AssignSUCReturnRouteRequest } from "../serialapi/network-mgmt/AssignSUCReturnRouteMessages";
-import { DeleteReturnRouteRequest } from "../serialapi/network-mgmt/DeleteReturnRouteMessages";
-import { DeleteSUCReturnRouteRequest } from "../serialapi/network-mgmt/DeleteSUCReturnRouteMessages";
+import { AssignPriorityReturnRouteRequest } from "../serialapi/network-mgmt/AssignPriorityReturnRouteMessages";
+import {
+	AssignPrioritySUCReturnRouteRequest,
+	AssignPrioritySUCReturnRouteRequestTransmitReport,
+} from "../serialapi/network-mgmt/AssignPrioritySUCReturnRouteMessages";
+import {
+	AssignReturnRouteRequest,
+	AssignReturnRouteRequestTransmitReport,
+} from "../serialapi/network-mgmt/AssignReturnRouteMessages";
+import {
+	AssignSUCReturnRouteRequest,
+	AssignSUCReturnRouteRequestTransmitReport,
+} from "../serialapi/network-mgmt/AssignSUCReturnRouteMessages";
+import {
+	DeleteReturnRouteRequest,
+	DeleteReturnRouteRequestTransmitReport,
+} from "../serialapi/network-mgmt/DeleteReturnRouteMessages";
+import {
+	DeleteSUCReturnRouteRequest,
+	DeleteSUCReturnRouteRequestTransmitReport,
+} from "../serialapi/network-mgmt/DeleteSUCReturnRouteMessages";
+import {
+	GetPriorityRouteRequest,
+	GetPriorityRouteResponse,
+} from "../serialapi/network-mgmt/GetPriorityRouteMessages";
 import {
 	GetRoutingInfoRequest,
 	GetRoutingInfoResponse,
@@ -208,6 +233,7 @@ import {
 	RequestNodeNeighborUpdateReport,
 	RequestNodeNeighborUpdateRequest,
 } from "../serialapi/network-mgmt/RequestNodeNeighborUpdateMessages";
+import { SetPriorityRouteRequest } from "../serialapi/network-mgmt/SetPriorityRouteMessages";
 import { SetSUCNodeIdRequest } from "../serialapi/network-mgmt/SetSUCNodeIDMessages";
 import {
 	ExtNVMReadLongBufferRequest,
@@ -253,6 +279,7 @@ import {
 	NVMOperationStatus,
 	NVMOperationsWriteRequest,
 } from "../serialapi/nvm/NVMOperationsMessages";
+import type { TransmitReport } from "../serialapi/transport/SendDataShared";
 import {
 	NodeIDType,
 	ZWaveApiVersion,
@@ -283,7 +310,13 @@ import {
 	SmartStartProvisioningEntry,
 } from "./Inclusion";
 import { determineNIF } from "./NodeInformationFrame";
-import { assertProvisioningEntry } from "./utils";
+import {
+	assertProvisioningEntry,
+	sdkVersionGt,
+	sdkVersionGte,
+	sdkVersionLt,
+	sdkVersionLte,
+} from "./utils";
 import type { UnknownZWaveChipType } from "./ZWaveChipTypes";
 import { protocolVersionToSDKVersion } from "./ZWaveSDKVersions";
 import {
@@ -293,6 +326,7 @@ import {
 	FirmwareUpdateFileInfo,
 	FirmwareUpdateInfo,
 	GetFirmwareUpdatesOptions,
+	HealNetworkOptions,
 	HealNodeStatus,
 	SDKVersion,
 } from "./_Types";
@@ -434,34 +468,22 @@ export class ZWaveController extends TypedEventEmitter<ControllerEventCallbacks>
 
 	/** Checks if the SDK version is greater than the given one */
 	public sdkVersionGt(version: SDKVersion): boolean | undefined {
-		if (this._sdkVersion === undefined) {
-			return undefined;
-		}
-		return semver.gt(padVersion(this._sdkVersion), padVersion(version));
+		return sdkVersionGt(this._sdkVersion, version);
 	}
 
 	/** Checks if the SDK version is greater than or equal to the given one */
 	public sdkVersionGte(version: SDKVersion): boolean | undefined {
-		if (this._sdkVersion === undefined) {
-			return undefined;
-		}
-		return semver.gte(padVersion(this._sdkVersion), padVersion(version));
+		return sdkVersionGte(this._sdkVersion, version);
 	}
 
 	/** Checks if the SDK version is lower than the given one */
 	public sdkVersionLt(version: SDKVersion): boolean | undefined {
-		if (this._sdkVersion === undefined) {
-			return undefined;
-		}
-		return semver.lt(padVersion(this._sdkVersion), padVersion(version));
+		return sdkVersionLt(this._sdkVersion, version);
 	}
 
 	/** Checks if the SDK version is lower than or equal to the given one */
 	public sdkVersionLte(version: SDKVersion): boolean | undefined {
-		if (this._sdkVersion === undefined) {
-			return undefined;
-		}
-		return semver.lte(padVersion(this._sdkVersion), padVersion(version));
+		return sdkVersionLte(this._sdkVersion, version);
 	}
 
 	private _manufacturerId: number | undefined;
@@ -579,7 +601,14 @@ export class ZWaveController extends TypedEventEmitter<ControllerEventCallbacks>
 
 	/** Returns the node with the given DSK */
 	public getNodeByDSK(dsk: Buffer | string): ZWaveNode | undefined {
-		if (typeof dsk === "string") dsk = dskFromString(dsk);
+		try {
+			if (typeof dsk === "string") dsk = dskFromString(dsk);
+		} catch (e) {
+			// Return undefined if the DSK is invalid
+			if (isZWaveError(e) && e.code === ZWaveErrorCodes.Argument_Invalid)
+				return undefined;
+			throw e;
+		}
 		for (const node of this._nodes.values()) {
 			if (node.dsk?.equals(dsk)) return node;
 		}
@@ -3363,12 +3392,18 @@ supported CCs: ${nodeInfo.supportedCCs
 	 * requesting updated neighbor lists and assigning fresh routes to
 	 * association targets.
 	 */
-	public beginHealingNetwork(): boolean {
+	public beginHealingNetwork(options: HealNetworkOptions = {}): boolean {
 		// Don't start the process twice
 		if (this._healNetworkActive) return false;
 		this._healNetworkActive = true;
 
-		this.driver.controllerLog.print(`starting network heal...`);
+		options.includeSleeping ??= true;
+
+		this.driver.controllerLog.print(
+			`starting network heal${
+				options.includeSleeping ? "" : " for mains-powered nodes"
+			}...`,
+		);
 
 		// Reset all nodes to "not healed"
 		this._healNetworkProgress.clear();
@@ -3388,13 +3423,15 @@ supported CCs: ${nodeInfo.supportedCCs
 					`Skipping heal because the node is not responding.`,
 				);
 				this._healNetworkProgress.set(id, "skipped");
+			} else if (!options.includeSleeping && node.canSleep) {
+				this._healNetworkProgress.set(id, "skipped");
 			} else {
 				this._healNetworkProgress.set(id, "pending");
 			}
 		}
 
 		// Do the heal process in the background
-		void this.healNetwork().catch(() => {
+		void this.healNetwork(options).catch(() => {
 			/* ignore errors */
 		});
 
@@ -3404,7 +3441,7 @@ supported CCs: ${nodeInfo.supportedCCs
 		return true;
 	}
 
-	private async healNetwork(): Promise<void> {
+	private async healNetwork(options: HealNetworkOptions): Promise<void> {
 		const pendingNodes = new Set(
 			[...this._healNetworkProgress]
 				.filter(([, status]) => status === "pending")
@@ -3419,11 +3456,13 @@ supported CCs: ${nodeInfo.supportedCCs
 				pendingNodes.delete(nodeId);
 				const node = this.nodes.getOrThrow(nodeId);
 				if (node.canSleep) {
-					this.driver.controllerLog.logNode(
-						nodeId,
-						"added to healing queue for sleeping nodes",
-					);
-					todoSleeping.push(nodeId);
+					if (options.includeSleeping) {
+						this.driver.controllerLog.logNode(
+							nodeId,
+							"added to healing queue for sleeping nodes",
+						);
+						todoSleeping.push(nodeId);
+					}
 				} else {
 					this.driver.controllerLog.logNode(
 						nodeId,
@@ -3481,17 +3520,23 @@ supported CCs: ${nodeInfo.supportedCCs
 			if (!this._healNetworkActive) return;
 		}
 
-		// Now heal all sleeping nodes at once
-		this.driver.controllerLog.print(
-			"Healing sleeping nodes in parallel. Wake them up to heal.",
-		);
+		if (options.includeSleeping) {
+			// Now heal all sleeping nodes at once
+			this.driver.controllerLog.print(
+				"Healing sleeping nodes in parallel. Wake them up to heal.",
+			);
 
-		const tasks = todoSleeping.map((nodeId) => doHeal(nodeId));
-		await Promise.all(tasks);
+			const tasks = todoSleeping.map((nodeId) => doHeal(nodeId));
+			await Promise.all(tasks);
+		}
 
 		// Only emit the done event when the process wasn't stopped in the meantime
 		if (this._healNetworkActive) {
+			this.driver.controllerLog.print("network heal completed");
+
 			this.emit("heal network done", new Map(this._healNetworkProgress));
+		} else {
+			this.driver.controllerLog.print("network heal aborted");
 		}
 		// We're done!
 		this._healNetworkActive = false;
@@ -3784,15 +3829,14 @@ ${associatedNodes.join(", ")}`,
 		});
 
 		try {
-			const result = await this.driver.sendMessage<
-				Message & SuccessIndicator
-			>(
-				new AssignSUCReturnRouteRequest(this.driver, {
-					nodeId,
-				}),
-			);
+			const result =
+				await this.driver.sendMessage<AssignSUCReturnRouteRequestTransmitReport>(
+					new AssignSUCReturnRouteRequest(this.driver, {
+						nodeId,
+					}),
+				);
 
-			return result.isOK();
+			return this.handleRouteAssignmentTransmitReport(result, nodeId);
 		} catch (e) {
 			this.driver.controllerLog.logNode(
 				nodeId,
@@ -3810,15 +3854,14 @@ ${associatedNodes.join(", ")}`,
 		});
 
 		try {
-			const result = await this.driver.sendMessage<
-				Message & SuccessIndicator
-			>(
-				new DeleteSUCReturnRouteRequest(this.driver, {
-					nodeId,
-				}),
-			);
+			const result =
+				await this.driver.sendMessage<DeleteSUCReturnRouteRequestTransmitReport>(
+					new DeleteSUCReturnRouteRequest(this.driver, {
+						nodeId,
+					}),
+				);
 
-			return result.isOK();
+			return this.handleRouteAssignmentTransmitReport(result, nodeId);
 		} catch (e) {
 			this.driver.controllerLog.logNode(
 				nodeId,
@@ -3839,16 +3882,15 @@ ${associatedNodes.join(", ")}`,
 		});
 
 		try {
-			const result = await this.driver.sendMessage<
-				Message & SuccessIndicator
-			>(
-				new AssignReturnRouteRequest(this.driver, {
-					nodeId,
-					destinationNodeId,
-				}),
-			);
+			const result =
+				await this.driver.sendMessage<AssignReturnRouteRequestTransmitReport>(
+					new AssignReturnRouteRequest(this.driver, {
+						nodeId,
+						destinationNodeId,
+					}),
+				);
 
-			return result.isOK();
+			return this.handleRouteAssignmentTransmitReport(result, nodeId);
 		} catch (e) {
 			this.driver.controllerLog.logNode(
 				nodeId,
@@ -3866,15 +3908,14 @@ ${associatedNodes.join(", ")}`,
 		});
 
 		try {
-			const result = await this.driver.sendMessage<
-				Message & SuccessIndicator
-			>(
-				new DeleteReturnRouteRequest(this.driver, {
-					nodeId,
-				}),
-			);
+			const result =
+				await this.driver.sendMessage<DeleteReturnRouteRequestTransmitReport>(
+					new DeleteReturnRouteRequest(this.driver, {
+						nodeId,
+					}),
+				);
 
-			return result.isOK();
+			return this.handleRouteAssignmentTransmitReport(result, nodeId);
 		} catch (e) {
 			this.driver.controllerLog.logNode(
 				nodeId,
@@ -3882,6 +3923,177 @@ ${associatedNodes.join(", ")}`,
 				"error",
 			);
 			return false;
+		}
+	}
+
+	/**
+	 * Assigns a priority route between two end nodes. This route will always be used for the first transmission attempt.
+	 * @param nodeId The ID of the source node of the route
+	 * @param destinationNodeId The ID of the destination node of the route
+	 * @param repeaters The IDs of the nodes that should be used as repeaters, or an empty array for direct connection
+	 * @param routeSpeed The transmission speed to use for the route
+	 */
+	public async assignPriorityReturnRoute(
+		nodeId: number,
+		destinationNodeId: number,
+		repeaters: number[],
+		routeSpeed: ZWaveDataRate,
+	): Promise<boolean> {
+		this.driver.controllerLog.logNode(nodeId, {
+			message: `Assigning priority return route to node ${destinationNodeId}...`,
+			direction: "outbound",
+		});
+
+		try {
+			const result =
+				await this.driver.sendMessage<AssignReturnRouteRequestTransmitReport>(
+					new AssignPriorityReturnRouteRequest(this.driver, {
+						nodeId,
+						destinationNodeId,
+						repeaters,
+						routeSpeed,
+					}),
+				);
+
+			return this.handleRouteAssignmentTransmitReport(result, nodeId);
+		} catch (e) {
+			this.driver.controllerLog.logNode(
+				nodeId,
+				`Assigning priority return route failed: ${getErrorMessage(e)}`,
+				"error",
+			);
+			return false;
+		}
+	}
+
+	/**
+	 * Assigns a priority route from an end node to the SUC. This route will always be used for the first transmission attempt.
+	 * @param nodeId The ID of the end node for which to assign the route
+	 * @param repeaters The IDs of the nodes that should be used as repeaters, or an empty array for direct connection
+	 * @param routeSpeed The transmission speed to use for the route
+	 */
+	public async assignPrioritySUCReturnRoute(
+		nodeId: number,
+		repeaters: number[],
+		routeSpeed: ZWaveDataRate,
+	): Promise<boolean> {
+		this.driver.controllerLog.logNode(nodeId, {
+			message: `Assigning priority SUC return route...`,
+			direction: "outbound",
+		});
+
+		try {
+			const result =
+				await this.driver.sendMessage<AssignPrioritySUCReturnRouteRequestTransmitReport>(
+					new AssignPrioritySUCReturnRouteRequest(this.driver, {
+						nodeId,
+						repeaters,
+						routeSpeed,
+					}),
+				);
+
+			return this.handleRouteAssignmentTransmitReport(result, nodeId);
+		} catch (e) {
+			this.driver.controllerLog.logNode(
+				nodeId,
+				`Assigning priority SUC return route failed: ${getErrorMessage(
+					e,
+				)}`,
+				"error",
+			);
+			return false;
+		}
+	}
+
+	private handleRouteAssignmentTransmitReport(
+		msg: TransmitReport,
+		nodeId: number,
+	): boolean {
+		switch (msg.transmitStatus) {
+			case TransmitStatus.OK:
+				return true;
+			case TransmitStatus.NoAck:
+				return false;
+			case TransmitStatus.NoRoute:
+				this.driver.controllerLog.logNode(
+					nodeId,
+					`Route resolution failed`,
+					"warn",
+				);
+				return false;
+			default:
+				return false;
+		}
+	}
+
+	/**
+	 * Sets the priority route which will always be used for the first transmission attempt from the controller to the given node.
+	 * @param destinationNodeId The ID of the node that should be reached via the priority route
+	 * @param repeaters The IDs of the nodes that should be used as repeaters, or an empty array for direct connection
+	 * @param routeSpeed The transmission speed to use for the route
+	 */
+	public async setPriorityRoute(
+		destinationNodeId: number,
+		repeaters: number[],
+		routeSpeed: ZWaveDataRate,
+	): Promise<boolean> {
+		this.driver.controllerLog.print(
+			`Setting priority route to node ${destinationNodeId}...`,
+		);
+
+		try {
+			const result = await this.driver.sendMessage<
+				Message & SuccessIndicator
+			>(
+				new SetPriorityRouteRequest(this.driver, {
+					destinationNodeId,
+					repeaters,
+					routeSpeed,
+				}),
+			);
+
+			return result.isOK();
+		} catch (e) {
+			this.driver.controllerLog.print(
+				`Setting priority route failed: ${getErrorMessage(e)}`,
+				"error",
+			);
+			return false;
+		}
+	}
+
+	/**
+	 * Returns the priority route which is currently set for a node. If none is set, either the LWR or the NLWR is returned.
+	 * @param destinationNodeId The ID of the node for which the priority route should be returned
+	 */
+	public async getPriorityRoute(destinationNodeId: number): Promise<
+		| {
+				repeaters: number[];
+				routeSpeed: ZWaveDataRate;
+		  }
+		| undefined
+	> {
+		this.driver.controllerLog.print(
+			`Retrieving priority route to node ${destinationNodeId}...`,
+		);
+
+		try {
+			const result =
+				await this.driver.sendMessage<GetPriorityRouteResponse>(
+					new GetPriorityRouteRequest(this.driver, {
+						destinationNodeId,
+					}),
+				);
+
+			return {
+				repeaters: result.repeaters,
+				routeSpeed: result.routeSpeed,
+			};
+		} catch (e) {
+			this.driver.controllerLog.print(
+				`Retrieving priority route failed: ${getErrorMessage(e)}`,
+				"error",
+			);
 		}
 	}
 
@@ -4277,15 +4489,32 @@ ${associatedNodes.join(", ")}`,
 		powerlevel: number,
 		measured0dBm: number,
 	): Promise<boolean> {
-		const result = await this.driver.sendMessage<
-			| SerialAPISetup_SetPowerlevelResponse
-			| SerialAPISetup_CommandUnsupportedResponse
-		>(
-			new SerialAPISetup_SetPowerlevelRequest(this.driver, {
+		let request: Message;
+		if (
+			this.supportedSerialAPISetupCommands?.includes(
+				SerialAPISetupCommand.SetPowerlevel16Bit,
+			)
+		) {
+			request = new SerialAPISetup_SetPowerlevel16BitRequest(
+				this.driver,
+				{
+					powerlevel,
+					measured0dBm,
+				},
+			);
+		} else {
+			request = new SerialAPISetup_SetPowerlevelRequest(this.driver, {
 				powerlevel,
 				measured0dBm,
-			}),
-		);
+			});
+		}
+
+		const result = await this.driver.sendMessage<
+			| SerialAPISetup_SetPowerlevelResponse
+			| SerialAPISetup_SetPowerlevel16BitResponse
+			| SerialAPISetup_CommandUnsupportedResponse
+		>(request);
+
 		if (result instanceof SerialAPISetup_CommandUnsupportedResponse) {
 			throw new ZWaveError(
 				`Your hardware does not support setting the powerlevel!`,
@@ -4302,10 +4531,22 @@ ${associatedNodes.join(", ")}`,
 			"powerlevel" | "measured0dBm"
 		>
 	> {
+		let request: Message;
+		if (
+			this.supportedSerialAPISetupCommands?.includes(
+				SerialAPISetupCommand.GetPowerlevel16Bit,
+			)
+		) {
+			request = new SerialAPISetup_GetPowerlevel16BitRequest(this.driver);
+		} else {
+			request = new SerialAPISetup_GetPowerlevelRequest(this.driver);
+		}
 		const result = await this.driver.sendMessage<
 			| SerialAPISetup_GetPowerlevelResponse
+			| SerialAPISetup_GetPowerlevel16BitResponse
 			| SerialAPISetup_CommandUnsupportedResponse
-		>(new SerialAPISetup_GetPowerlevelRequest(this.driver));
+		>(request);
+
 		if (result instanceof SerialAPISetup_CommandUnsupportedResponse) {
 			throw new ZWaveError(
 				`Your hardware does not support getting the powerlevel!`,
@@ -5131,7 +5372,8 @@ ${associatedNodes.join(", ")}`,
 	 */
 	public isAnyOTAFirmwareUpdateInProgress(): boolean {
 		for (const node of this._nodes.values()) {
-			if (node.isFirmwareUpdateInProgress()) return true;
+			if (!node.isControllerNode && node.isFirmwareUpdateInProgress())
+				return true;
 		}
 		return false;
 	}

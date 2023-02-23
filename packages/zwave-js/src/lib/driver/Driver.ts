@@ -2657,7 +2657,10 @@ export class Driver
 		try {
 			// Parse the message while remembering potential decoding errors in embedded CCs
 			// This way we can log the invalid CC contents
-			msg = Message.from(this, { data });
+			msg = Message.from(this, {
+				data,
+				sdkVersion: this._controller?.sdkVersion,
+			});
 			// Ensure there are no errors
 			if (isCommandClassContainer(msg)) assertValidCCs(msg);
 			// And update statistics
@@ -3803,10 +3806,7 @@ ${handlers.length} left`,
 		) {
 			const unwrapped = msg.command.encapsulated;
 			if (isArray(unwrapped)) {
-				this.driverLog.print(
-					`Received a command that contains multiple CommandClasses. This is not supported yet! Discarding the message...`,
-					"warn",
-				);
+				// Multi Command CC cannot be further unwrapped
 				return;
 			}
 
@@ -4665,6 +4665,18 @@ ${handlers.length} left`,
 		}
 		this.encapsulateCommands(msg);
 		return msg.command.getMaxPayloadLength(msg.getMaxPayloadLength());
+	}
+
+	/** Determines time in milliseconds to wait for a report from a node */
+	public getReportTimeout(msg: Message): number {
+		const node = this.getNodeUnsafe(msg);
+
+		// If the node has a compat flag to override the timeout, use that,
+		// otherwise use the driver option
+		return (
+			node?.deviceConfig?.compat?.reportTimeout ??
+			this.options.timeouts.report
+		);
 	}
 
 	/** Returns the preferred constructor to use for singlecast SendData commands */

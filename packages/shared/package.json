@@ -1,6 +1,6 @@
 {
   "name": "@zwave-js/shared",
-  "version": "10.4.0",
+  "version": "10.10.0",
   "description": "zwave-js: shared utilities",
   "keywords": [],
   "publishConfig": {
@@ -58,12 +58,12 @@
     "build": "tsc -b tsconfig.build.json",
     "clean": "del-cli build/ \"*.tsbuildinfo\"",
     "extract-api": "yarn api-extractor run",
-    "//watch": "yarn run build --watch --pretty",
     "lint:ts": "eslint --ext .ts --rule \"prettier/prettier: off\" \"src/**/*.ts\"",
     "lint:ts:fix": "yarn run lint:ts --fix",
     "lint:prettier": "prettier -c \"src/**/*.ts\"",
     "lint:prettier:fix": "yarn run lint:prettier -w",
-    "test:ts": "ava"
+    "test:ts": "ava",
+    "test:dirty": "node -r ../../maintenance/esbuild-register.js ../maintenance/src/resolveDirtyTests.ts --run"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "*",

@@ -15,6 +15,7 @@ import {
 	InclusionControllerCCInitiate,
 	InclusionControllerStep,
 	isCommandClassContainer,
+	MultiCommandCCCommandEncapsulation,
 	MultilevelSwitchCommand,
 	PollValueImplementation,
 	Powerlevel,
@@ -60,6 +61,7 @@ import {
 } from "@zwave-js/cc/MultilevelSwitchCC";
 import { NodeNamingAndLocationCCValues } from "@zwave-js/cc/NodeNamingCC";
 import {
+	getNotificationStateValueWithEnum,
 	getNotificationValueMetadata,
 	NotificationCC,
 	NotificationCCReport,
@@ -998,7 +1000,7 @@ export class ZWaveNode
 				});
 			}
 
-			return true;
+			return isUnsupervisedOrSucceeded(result);
 		} catch (e) {
 			// Define which errors during setValue are expected and won't crash
 			// the driver:
@@ -1380,13 +1382,15 @@ export class ZWaveNode
 
 		const { resetSecurityClasses = false, waitForWakeup = true } = options;
 		// Unless desired, don't forget the information about sleeping nodes immediately, so they continue to function
+		let didWakeUp = false;
 		if (
 			waitForWakeup &&
 			this.canSleep &&
 			this.supportsCC(CommandClasses["Wake Up"])
 		) {
-			// eslint-disable-next-line @typescript-eslint/no-empty-function
-			await this.waitForWakeup().catch(() => {});
+			didWakeUp = await this.waitForWakeup()
+				.then(() => true)
+				.catch(() => false);
 		}
 
 		// preserve the node name and location, since they might not be stored on the node
@@ -1430,6 +1434,10 @@ export class ZWaveNode
 
 		// Don't keep the node awake after the interview
 		this.keepAwake = false;
+
+		// If we did wait for the wakeup, mark the node as awake again so it does not
+		// get considered asleep after querying protocol info.
+		if (didWakeUp) this.markAsAwake();
 
 		void this.driver.interviewNodeInternal(this);
 		this._refreshInfoPending = false;
@@ -1590,13 +1598,13 @@ protocol version:      ${this.protocolVersion}`;
 			direction: "inbound",
 		});
 
-		// Assume that sleeping nodes start asleep
+		// Assume that sleeping nodes start asleep (unless we know it is awake)
 		if (this.canSleep) {
 			if (this.status === NodeStatus.Alive) {
-				// unless it was just included and is currently communicating with us
-				// In that case we need to switch from alive/dead to awake/asleep
+				// If it was just included and is currently communicating with us,
+				// then we didn't know yet that it can sleep. So we need to switch from alive/dead to awake/asleep
 				this.markAsAwake();
-			} else {
+			} else if (this.status !== NodeStatus.Awake) {
 				this.markAsAsleep();
 			}
 		}
@@ -2070,7 +2078,12 @@ protocol version:      ${this.protocolVersion}`;
 				this.supportsCC(CommandClasses["Security 2"]) &&
 				!endpoint.supportsCC(CommandClasses["Security 2"]);
 			if (endpointMissingS2) {
-				endpoint.addCC(CommandClasses["Security 2"], { secure: true });
+				endpoint.addCC(
+					CommandClasses["Security 2"],
+					this.implementedCommandClasses.get(
+						CommandClasses["Security 2"],
+					)!,
+				);
 			}
 
 			// Always interview Security first because it changes the interview order
@@ -2572,7 +2585,7 @@ protocol version:      ${this.protocolVersion}`;
 	 * @internal
 	 * Handles a CommandClass that was received from this node
 	 */
-	public handleCommand(command: CommandClass): Promise<void> | void {
+	public async handleCommand(command: CommandClass): Promise<void> {
 		// If the node sent us an unsolicited update, our initial assumption
 		// was wrong. Stop querying it regularly for updates
 		this.cancelManualValueRefresh(command.ccId);
@@ -2646,6 +2659,12 @@ protocol version:      ${this.protocolVersion}`;
 					command,
 				);
 			}
+		} else if (command instanceof MultiCommandCCCommandEncapsulation) {
+			// Handle each encapsulated command individually
+			for (const cmd of command.encapsulated) {
+				await this.handleCommand(cmd);
+			}
+			return;
 		}
 
 		// Ignore all commands that don't need to be handled
@@ -3479,7 +3498,17 @@ protocol version:      ${this.protocolVersion}`;
 					}
 				}
 			}
-			this.valueDB.setValue(valueId, value);
+			if (typeof command.eventParameters === "number") {
+				// This notification contains an enum value. We set "fake" values for these to distinguish them
+				// from states without enum values
+				const valueWithEnum = getNotificationStateValueWithEnum(
+					value,
+					command.eventParameters,
+				);
+				this.valueDB.setValue(valueId, valueWithEnum);
+			} else {
+				this.valueDB.setValue(valueId, value);
+			}
 
 			// Nodes before V8 (and some misbehaving V8 ones) don't necessarily reset the notification to idle.
 			// The specifications advise to auto-reset the variables, but it has been found that this interferes
@@ -3667,7 +3696,11 @@ protocol version:      ${this.protocolVersion}`;
 	 * Returns whether a firmware update is in progress for this node.
 	 */
 	public isFirmwareUpdateInProgress(): boolean {
-		return this._firmwareUpdateInProgress;
+		if (this.isControllerNode) {
+			return this.driver.controller.isFirmwareUpdateInProgress();
+		} else {
+			return this._firmwareUpdateInProgress;
+		}
 	}
 
 	private _abortFirmwareUpdate: (() => Promise<void>) | undefined;

@@ -75,7 +75,6 @@ import { MessageType } from '@zwave-js/serial';
 import type { MetadataUpdatedArgs } from '@zwave-js/core';
 import { MockControllerBehavior } from '@zwave-js/testing';
 import { MockNodeBehavior } from '@zwave-js/testing';
-import { MockPortBinding } from '@zwave-js/serial/mock';
 import { MulticastCC } from '@zwave-js/core';
 import { MulticastDestination } from '@zwave-js/core/safe';
 import { MultilevelSwitchCommand } from '@zwave-js/cc/safe';
@@ -146,6 +145,7 @@ import { ValueType } from '@zwave-js/core/safe';
 import type { ValueUpdatedArgs } from '@zwave-js/core';
 import { ZWaveApiVersion } from '@zwave-js/core/safe';
 import type { ZWaveApplicationHost } from '@zwave-js/host';
+import { ZWaveDataRate } from '@zwave-js/core';
 import { ZWaveError } from '@zwave-js/core/safe';
 import { ZWaveErrorCodes } from '@zwave-js/core/safe';
 import type { ZWaveHost } from '@zwave-js/host';
@@ -218,13 +218,6 @@ export interface ControllerStatistics {
 
 export { ControllerValueLogContext }
 
-// Warning: (ae-forgotten-export) The symbol "CreateAndStartDriverWithMockPortOptions" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "CreateAndStartDriverWithMockPortResult" needs to be exported by the entry point index.d.ts
-// Warning: (ae-missing-release-tag) "createAndStartDriverWithMockPort" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
-//
-// @public
-export function createAndStartDriverWithMockPort(options?: DeepPartial<CreateAndStartDriverWithMockPortOptions & ZWaveOptions>): Promise<CreateAndStartDriverWithMockPortResult>;
-
 // Warning: (ae-missing-release-tag) "createDefaultBehaviors" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public
@@ -290,6 +283,7 @@ export class Driver extends TypedEventEmitter<DriverEventCallbacks> implements Z
     readonly getNextSupervisionSessionId: () => number;
     // (undocumented)
     getNodeUnsafe(msg: Message): ZWaveNode | undefined;
+    getReportTimeout(msg: Message): number;
     // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
     // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
     // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
@@ -396,6 +390,7 @@ export class Endpoint implements IZWaveEndpoint {
     get deviceClass(): DeviceClass | undefined;
     protected set deviceClass(deviceClass: DeviceClass | undefined);
     protected readonly driver: Driver;
+    get endpointLabel(): string | undefined;
     // (undocumented)
     getCCs(): Iterable<[ccId: CommandClasses_2, info: CommandClassInfo]>;
     getCCVersion(cc: CommandClasses_2): number;
@@ -528,6 +523,13 @@ export interface GetFirmwareUpdatesOptions {
 }
 
 export { guessFirmwareFileFormat }
+
+// Warning: (ae-missing-release-tag) "HealNetworkOptions" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export interface HealNetworkOptions {
+    includeSleeping?: boolean;
+}
 
 // Warning: (ae-missing-release-tag) "HealNodeStatus" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
@@ -836,17 +838,25 @@ export enum SerialAPISetupCommand {
     // (undocumented)
     GetLRMaximumPayloadSize = 17,
     // (undocumented)
+    GetLRMaximumTxPower = 5,
+    // (undocumented)
     GetMaximumPayloadSize = 16,
     // (undocumented)
     GetPowerlevel = 8,
+    // (undocumented)
+    GetPowerlevel16Bit = 19,
     // (undocumented)
     GetRFRegion = 32,
     // (undocumented)
     GetSupportedCommands = 1,
     // (undocumented)
+    SetLRMaximumTxPower = 3,
+    // (undocumented)
     SetNodeIDType = 128,
     // (undocumented)
     SetPowerlevel = 4,
+    // (undocumented)
+    SetPowerlevel16Bit = 18,
     // (undocumented)
     SetRFRegion = 64,
     // (undocumented)
@@ -956,6 +966,15 @@ export interface ZWaveController extends ControllerStatisticsHost {
 // @public (undocumented)
 export class ZWaveController extends TypedEventEmitter<ControllerEventCallbacks> {
     addAssociations(source: AssociationAddress, group: number, destinations: AssociationAddress[]): Promise<void>;
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    assignPriorityReturnRoute(nodeId: number, destinationNodeId: number, repeaters: number[], routeSpeed: ZWaveDataRate): Promise<boolean>;
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    assignPrioritySUCReturnRoute(nodeId: number, repeaters: number[], routeSpeed: ZWaveDataRate): Promise<boolean>;
     // (undocumented)
     assignReturnRoute(nodeId: number, destinationNodeId: number): Promise<boolean>;
     // (undocumented)
@@ -968,7 +987,7 @@ export class ZWaveController extends TypedEventEmitter<ControllerEventCallbacks>
     //
     // @deprecated
     beginExclusion(unprovision: boolean | "inactive"): Promise<boolean>;
-    beginHealingNetwork(): boolean;
+    beginHealingNetwork(options?: HealNetworkOptions): boolean;
     // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
     beginInclusion(options?: InclusionOptions): Promise<boolean>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "zwave-js" does not have an export "firmwareUpdateOTA"
@@ -1018,6 +1037,11 @@ export class ZWaveController extends TypedEventEmitter<ControllerEventCallbacks>
     getNVMId(): Promise<NVMId>;
     // Warning: (ae-forgotten-export) The symbol "SerialAPISetup_GetPowerlevelResponse" needs to be exported by the entry point index.d.ts
     getPowerlevel(): Promise<Pick<SerialAPISetup_GetPowerlevelResponse, "powerlevel" | "measured0dBm">>;
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    getPriorityRoute(destinationNodeId: number): Promise<{
+        repeaters: number[];
+        routeSpeed: ZWaveDataRate;
+    } | undefined>;
     getProvisioningEntries(): SmartStartProvisioningEntry[];
     getProvisioningEntry(dskOrNodeId: string | number): Readonly<SmartStartProvisioningEntry> | undefined;
     getRFRegion(): Promise<RFRegion_2>;
@@ -1081,6 +1105,10 @@ export class ZWaveController extends TypedEventEmitter<ControllerEventCallbacks>
     sdkVersionLt(version: SDKVersion): boolean | undefined;
     sdkVersionLte(version: SDKVersion): boolean | undefined;
     setPowerlevel(powerlevel: number, measured0dBm: number): Promise<boolean>;
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    // Warning: (tsdoc-param-tag-missing-hyphen) The @param block should be followed by a parameter name and then a hyphen
+    setPriorityRoute(destinationNodeId: number, repeaters: number[], routeSpeed: ZWaveDataRate): Promise<boolean>;
     setRFRegion(region: RFRegion_2): Promise<boolean>;
     stopExclusion(): Promise<boolean>;
     stopHealingNetwork(): boolean;

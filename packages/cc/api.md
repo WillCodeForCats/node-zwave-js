@@ -1756,7 +1756,8 @@ export class BatteryCCHealthReport extends BatteryCC {
 //
 // @public (undocumented)
 export class BatteryCCReport extends BatteryCC {
-    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions);
+    // Warning: (ae-forgotten-export) The symbol "BatteryCCReportOptions" needs to be exported by the entry point index.d.ts
+    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions | BatteryCCReportOptions);
     // (undocumented)
     readonly backup: boolean | undefined;
     // (undocumented)
@@ -1777,6 +1778,8 @@ export class BatteryCCReport extends BatteryCC {
     readonly rechargeable: boolean | undefined;
     // (undocumented)
     readonly rechargeOrReplace: BatteryReplacementStatus | undefined;
+    // (undocumented)
+    serialize(): Buffer;
     // (undocumented)
     toLogEntry(applHost: ZWaveApplicationHost): MessageOrCCLogEntry_2;
 }
@@ -2358,7 +2361,7 @@ export class BinarySwitchCCGet extends BinarySwitchCC {
 // @public (undocumented)
 export class BinarySwitchCCReport extends BinarySwitchCC {
     // Warning: (ae-forgotten-export) The symbol "BinarySwitchCCReportOptions" needs to be exported by the entry point index.d.ts
-    constructor(host: ZWaveHost_2, options: BinarySwitchCCReportOptions);
+    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions | BinarySwitchCCReportOptions);
     // (undocumented)
     readonly currentValue: Maybe<boolean> | undefined;
     // (undocumented)
@@ -7319,6 +7322,35 @@ export class IndicatorCC extends CommandClass {
     translatePropertyKey(applHost: ZWaveApplicationHost, property: string | number, propertyKey: string | number): string | undefined;
 }
 
+// Warning: (ae-missing-release-tag) "IndicatorCCDescriptionGet" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export class IndicatorCCDescriptionGet extends IndicatorCC {
+    // Warning: (ae-forgotten-export) The symbol "IndicatorCCDescriptionGetOptions" needs to be exported by the entry point index.d.ts
+    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions | IndicatorCCDescriptionGetOptions);
+    // (undocumented)
+    indicatorId: number;
+    // (undocumented)
+    serialize(): Buffer;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost): MessageOrCCLogEntry_2;
+}
+
+// Warning: (ae-missing-release-tag) "IndicatorCCDescriptionReport" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
+//
+// @public (undocumented)
+export class IndicatorCCDescriptionReport extends IndicatorCC {
+    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions);
+    // (undocumented)
+    description: string;
+    // (undocumented)
+    indicatorId: number;
+    // (undocumented)
+    persistValues(applHost: ZWaveApplicationHost): boolean;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost): MessageOrCCLogEntry_2;
+}
+
 // Warning: (ae-missing-release-tag) "IndicatorCCGet" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
 //
 // @public (undocumented)
@@ -7401,6 +7433,32 @@ export class IndicatorCCSupportedReport extends IndicatorCC {
 //
 // @public (undocumented)
 export const IndicatorCCValues: Readonly<{
+    indicatorDescription: ((indicatorId: number) => {
+        readonly endpoint: (endpoint?: number | undefined) => {
+            readonly commandClass: CommandClasses.Indicator;
+            readonly endpoint: number;
+            readonly property: number;
+        };
+        readonly id: {
+            commandClass: CommandClasses.Indicator;
+            property: number;
+        };
+        readonly meta: {
+            readonly type: "any";
+            readonly readable: true;
+            readonly writeable: true;
+        };
+    }) & {
+        is: (valueId: ValueID_2) => boolean;
+        readonly options: {
+            readonly stateful: true;
+            readonly secret: false;
+            readonly supportsEndpoints: true;
+            readonly autoCreate: true;
+            readonly internal: true;
+            readonly minVersion: 4;
+        };
+    };
     valueV2: ((indicatorId: number, propertyId: number) => {
         readonly endpoint: (endpoint?: number | undefined) => {
             readonly commandClass: CommandClasses.Indicator;
@@ -7459,6 +7517,32 @@ export const IndicatorCCValues: Readonly<{
             readonly supportsEndpoints: true;
             readonly autoCreate: true;
             readonly internal: true;
+        };
+    };
+    identify: {
+        readonly id: {
+            commandClass: CommandClasses.Indicator;
+            property: "identify";
+        };
+        readonly endpoint: (endpoint?: number | undefined) => {
+            readonly commandClass: CommandClasses.Indicator;
+            readonly endpoint: number;
+            readonly property: "identify";
+        };
+        readonly is: (valueId: ValueID_2) => boolean;
+        readonly meta: {
+            readonly label: "Identify";
+            readonly readable: false;
+            readonly type: "boolean";
+            readonly writeable: true;
+        };
+        readonly options: {
+            readonly internal: false;
+            readonly stateful: true;
+            readonly secret: false;
+            readonly supportsEndpoints: true;
+            readonly autoCreate: true;
+            readonly minVersion: 3;
         };
     };
     valueV1: {
@@ -7523,6 +7607,10 @@ export const IndicatorCCValues: Readonly<{
 //
 // @public (undocumented)
 export enum IndicatorCommand {
+    // (undocumented)
+    DescriptionGet = 6,
+    // (undocumented)
+    DescriptionReport = 7,
     // (undocumented)
     Get = 2,
     // (undocumented)
@@ -10356,7 +10444,8 @@ export class MultiChannelCCCapabilityGet extends MultiChannelCC {
 //
 // @public (undocumented)
 export class MultiChannelCCCapabilityReport extends MultiChannelCC implements ApplicationNodeInformation {
-    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions);
+    // Warning: (ae-forgotten-export) The symbol "MultiChannelCCCapabilityReportOptions" needs to be exported by the entry point index.d.ts
+    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions | MultiChannelCCCapabilityReportOptions);
     // (undocumented)
     readonly endpointIndex: number;
     // (undocumented)
@@ -10365,6 +10454,8 @@ export class MultiChannelCCCapabilityReport extends MultiChannelCC implements Ap
     readonly isDynamic: boolean;
     // (undocumented)
     persistValues(applHost: ZWaveApplicationHost): boolean;
+    // (undocumented)
+    serialize(): Buffer;
     // (undocumented)
     readonly specificDeviceClass: number;
     // (undocumented)
@@ -10413,21 +10504,24 @@ export class MultiChannelCCEndPointFind extends MultiChannelCC {
 //
 // @public (undocumented)
 export class MultiChannelCCEndPointFindReport extends MultiChannelCC {
-    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions);
+    // Warning: (ae-forgotten-export) The symbol "MultiChannelCCEndPointFindReportOptions" needs to be exported by the entry point index.d.ts
+    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions | MultiChannelCCEndPointFindReportOptions);
     // (undocumented)
     expectMoreMessages(): boolean;
     // (undocumented)
-    get foundEndpoints(): readonly number[];
+    foundEndpoints: number[];
     // (undocumented)
-    get genericClass(): number;
+    genericClass: number;
     // (undocumented)
     getPartialCCSessionId(): Record<string, any> | undefined;
     // (undocumented)
     mergePartialCCs(applHost: ZWaveApplicationHost, partials: MultiChannelCCEndPointFindReport[]): void;
     // (undocumented)
-    get reportsToFollow(): number;
+    reportsToFollow: number;
     // (undocumented)
-    get specificClass(): number;
+    serialize(): Buffer;
+    // (undocumented)
+    specificClass: number;
     // (undocumented)
     toLogEntry(applHost: ZWaveApplicationHost): MessageOrCCLogEntry_2;
 }
@@ -10442,15 +10536,18 @@ export class MultiChannelCCEndPointGet extends MultiChannelCC {
 //
 // @public (undocumented)
 export class MultiChannelCCEndPointReport extends MultiChannelCC {
-    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions);
+    // Warning: (ae-forgotten-export) The symbol "MultiChannelCCEndPointReportOptions" needs to be exported by the entry point index.d.ts
+    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions | MultiChannelCCEndPointReportOptions);
     // (undocumented)
-    readonly aggregatedCount: number | undefined;
+    aggregatedCount: number | undefined;
     // (undocumented)
-    readonly countIsDynamic: boolean;
+    countIsDynamic: boolean;
     // (undocumented)
-    readonly identicalCapabilities: boolean;
+    identicalCapabilities: boolean;
     // (undocumented)
-    readonly individualCount: number;
+    individualCount: number;
+    // (undocumented)
+    serialize(): Buffer;
     // (undocumented)
     toLogEntry(applHost: ZWaveApplicationHost): MessageOrCCLogEntry_2;
 }
@@ -11659,7 +11756,7 @@ export class NotificationCCReport extends NotificationCC {
     // (undocumented)
     alarmType: number | undefined;
     // (undocumented)
-    eventParameters: Buffer | Duration | Record<string, number> | undefined;
+    eventParameters: Buffer | Duration | Record<string, number> | number | undefined;
     // (undocumented)
     notificationEvent: number | undefined;
     // (undocumented)
@@ -12980,6 +13077,8 @@ export class ScheduleEntryLockCCDailyRepeatingScheduleGet extends ScheduleEntryL
     // (undocumented)
     slotId: number;
     // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
+    // (undocumented)
     userId: number;
 }
 
@@ -13001,6 +13100,8 @@ export class ScheduleEntryLockCCDailyRepeatingScheduleReport extends ScheduleEnt
     startHour?: number;
     // (undocumented)
     startMinute?: number;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
     // (undocumented)
     userId: number;
     // (undocumented)
@@ -13027,6 +13128,8 @@ export class ScheduleEntryLockCCDailyRepeatingScheduleSet extends ScheduleEntryL
     // (undocumented)
     startMinute?: number;
     // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
+    // (undocumented)
     userId: number;
     // (undocumented)
     weekdays?: ScheduleEntryLockWeekday[];
@@ -13052,6 +13155,8 @@ export class ScheduleEntryLockCCEnableAllSet extends ScheduleEntryLockCC {
     enabled: boolean;
     // (undocumented)
     serialize(): Buffer;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
 }
 
 // Warning: (ae-missing-release-tag) "ScheduleEntryLockCCEnableSet" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -13064,6 +13169,8 @@ export class ScheduleEntryLockCCEnableSet extends ScheduleEntryLockCC {
     enabled: boolean;
     // (undocumented)
     serialize(): Buffer;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
     // (undocumented)
     userId: number;
 }
@@ -13088,6 +13195,8 @@ export class ScheduleEntryLockCCSupportedReport extends ScheduleEntryLockCC {
     numYearDaySlots: number;
     // (undocumented)
     serialize(): Buffer;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
 }
 
 // Warning: (ae-missing-release-tag) "ScheduleEntryLockCCTimeOffsetGet" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -13108,6 +13217,8 @@ export class ScheduleEntryLockCCTimeOffsetReport extends ScheduleEntryLockCC {
     serialize(): Buffer;
     // (undocumented)
     standardOffset: number;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
 }
 
 // Warning: (ae-missing-release-tag) "ScheduleEntryLockCCTimeOffsetSet" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -13122,6 +13233,8 @@ export class ScheduleEntryLockCCTimeOffsetSet extends ScheduleEntryLockCC {
     serialize(): Buffer;
     // (undocumented)
     standardOffset: number;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
 }
 
 // Warning: (ae-missing-release-tag) "ScheduleEntryLockCCValues" is exported by the package, but it is missing a release tag (@alpha, @beta, @public, or @internal)
@@ -13216,6 +13329,8 @@ export class ScheduleEntryLockCCWeekDayScheduleGet extends ScheduleEntryLockCC {
     // (undocumented)
     slotId: number;
     // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
+    // (undocumented)
     userId: number;
 }
 
@@ -13237,6 +13352,8 @@ export class ScheduleEntryLockCCWeekDayScheduleReport extends ScheduleEntryLockC
     stopHour?: number;
     // (undocumented)
     stopMinute?: number;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
     // (undocumented)
     userId: number;
     // (undocumented)
@@ -13263,6 +13380,8 @@ export class ScheduleEntryLockCCWeekDayScheduleSet extends ScheduleEntryLockCC {
     // (undocumented)
     stopMinute?: number;
     // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
+    // (undocumented)
     userId: number;
     // (undocumented)
     weekday?: ScheduleEntryLockWeekday;
@@ -13288,6 +13407,8 @@ export class ScheduleEntryLockCCYearDayScheduleGet extends ScheduleEntryLockCC {
     serialize(): Buffer;
     // (undocumented)
     slotId: number;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
     // (undocumented)
     userId: number;
 }
@@ -13323,6 +13444,8 @@ export class ScheduleEntryLockCCYearDayScheduleReport extends ScheduleEntryLockC
     // (undocumented)
     stopYear?: number;
     // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
+    // (undocumented)
     userId: number;
 }
 
@@ -13357,6 +13480,8 @@ export class ScheduleEntryLockCCYearDayScheduleSet extends ScheduleEntryLockCC {
     stopMonth?: number;
     // (undocumented)
     stopYear?: number;
+    // (undocumented)
+    toLogEntry(applHost: ZWaveApplicationHost_2): MessageOrCCLogEntry;
     // (undocumented)
     userId: number;
 }
@@ -13551,7 +13676,10 @@ export class Security2CCCommandsSupportedGet extends Security2CC {
 //
 // @public (undocumented)
 export class Security2CCCommandsSupportedReport extends Security2CC {
-    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions);
+    // Warning: (ae-forgotten-export) The symbol "Security2CCCommandsSupportedReportOptions" needs to be exported by the entry point index.d.ts
+    constructor(host: ZWaveHost_2, options: CommandClassDeserializationOptions | Security2CCCommandsSupportedReportOptions);
+    // (undocumented)
+    serialize(): Buffer;
     // (undocumented)
     readonly supportedCCs: CommandClasses_2[];
     // (undocumented)

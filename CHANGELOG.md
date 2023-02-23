@@ -4,6 +4,110 @@
 <!--
 	Add placeholder for next release with `wip` snippet
 -->
+## __WORK IN PROGRESS__
+<!-- ### Breaking changes
+
+### Features -->
+
+### Bugfixes
+* Queries for invalid enum members are skipped during the interview. This could happen for some CCs when the device incorrectly encoded a support bitmask (#5465)
+
+### Config file changes
+* Force-add Basic CC as supported for HeatIt Z-Smoke 230V (#5436)
+
+### Changes under the hood
+* All remaining packages now use `ava` for testing instead of `jest` (#5460, #5459, #5454, #5452, #5447, #5443)
+* The mock serialport has been moved to the `@zwave-js/serial/mock` subpath export (#5455)
+* `createAndStartDriverWithMockPort` was moved to the `zwave-js/Testing` subpath export (#5458)
+* The `watch` tasks used during development are now working again
+
+## 10.10.0 (2023-02-08)
+**Note:** `10.9.0` was not actually released due to an error in the release pipeline. Some of these changes are tagged as `10.9.0` on GitHub, but are only released as part of `10.10.0`.
+
+### Features
+* Values for `Notification CC` variables that are mapped from V1 Alarms are now created during the interview (#5420)
+* Add new SerialAPI Setup commands (#5437)
+
+### Bugfixes
+* Only create CC values for CC versions a node is known - not assumed - to support (#5427)
+* All commands contained in a `Multi Command CC` are now properly handled (#5423)
+* Nodes are no longer marked dead when assigning/deleting routes fails due to any other reason than the node being unreachable (#5421)
+* Parse some controller messages differently depending on SDK version, working around firmware `7.19.1` not matching the Host API specification (#5430)
+* Several fixes to `nvmedit` utility which powers NVM backup/restore: include changes in `7.18.1` firmware, support `7.19.x` protocol file format, allow restoring NVMs onto unsupported future firmware versions (#5432, #5434)
+
+### Config file changes
+* Preserve temperature sensor endpoint for Fibaro FGK101 (#5424)
+* Update Danfoss 014G0205 (#5426)
+* Disable Supervision for Heatit Z-RELAY (#5435)
+
+### Changes under the hood
+* The body of GitHub Releases should now be encoded correctly again (and the release pipeline should hopefully no longer fail)
+
+## 10.8.0 (2023-02-06)
+### Features
+* Add support for managing priority (return) routes (#5410)
+
+### Bugfixes
+* Update workaround for incorrectly encoded `SerialAPISetup` support bitmask to handle fixed controller firmware `7.19.1+` (#5419)
+
+### Config file changes
+* Add flag to override report timeout for single devices (#5416)
+* Increase report timeout for Schlage BE469ZP (#5418)
+* Disable Supervision and increase report timeout for Yale Smart Door Lock (#5417)
+
+### Changes under the hood
+* Replace deprecated `::set-output` commands in CI scripts (#5415)
+
+## 10.7.0 (2023-02-03)
+### Features
+* `node.isFirmwareUpdateInProgress()` now considers OTW updates if the node is the controller node (#5408)
+
+### Bugfixes
+* Rename `label` property on `Endpoint` class to `endpointLabel` (#5409)
+
+## 10.6.0 (2023-02-02)
+### Features
+* Support assigning labels to endpoints (#5403)
+* Added a writeonly value to trigger `Identify` on a node (#5397)
+* Add option to skip healing battery powered nodes (#5389)
+* Support Indicator CC v4 (#5395)
+
+### Bugfixes
+* Revert to our own implementation of HTTP caching to avoid errors when checking for firmware updates (#5405)
+* Clarify return value of `setValue` in the documentation and return `false` when a supervised command fails (#5380)
+* Add support for enums in Notification CC event parameters (#5394)
+* Battery-powered nodes are now initially assumed to be awake during re-interview if a wakeup triggered the re-interview (#5390)
+
+### Config file changes
+* Add new fingerprint for Fibaro FGCD001 CO sensor (#5387)
+* Add fingerprint `0x0003:0x0017` to "Heatit Z-Smoke 230V" (#5401)
+* Add Good Way WD6051 controller (#5400)
+* Treat Basic Set as events for TKB Home TZ56-D/TZ66-D (#5388)
+* Add fingerprint for Ring Extender G2 (#5385)
+* Add endpoint labels for Aeotec Siren 6 (#5403)
+
+### Changes under the hood
+* Add logging for Schedule Entry Lock CC (#5393)
+
+## 10.5.6 (2023-01-31)
+### Bugfixes
+* Always use S2 for endpoint communication if node uses S2 (#5386)
+
+## 10.5.5 (2023-01-30)
+### Not really a feature
+* Add 800 series chip types (#4910)
+
+### Bugfixes
+* Prevent "possible memory leak" warnings caused by `got` caching (#5371)
+* When checking if a DSK is valid, also check its values, not only the format (#5376)
+
+### Config file changes
+* Define Lifeline association for Secure Meters SRT322 (#5370)
+* Add ZVIDAR Z-DWS-V01, Z-DG-V01 and Sunricher SR-ZV9001T4-DIM (#5277)
+* Disable Supervision for Minoston MP21Z (#5377)
+* Add Quby Energy Meter Reader (#5379)
+* Correct Zooz ZEN15 parameter 152 value size (#5378)
+
 ## 10.5.4 (2023-01-27)
 ### Bugfixes
 * Fixed an issue where ongoing transactions could be retried after entering the bootloader, corrupting 700+ series firmware updates (#5368)
